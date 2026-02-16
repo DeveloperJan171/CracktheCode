@@ -13,107 +13,83 @@
             --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
         }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg-gradient); 
-            background-attachment: fixed;
-            color: white; display: flex; flex-direction: column; align-items: center; padding: 10px;
-            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif; background: var(--bg-gradient); 
+            background-attachment: fixed; color: white; display: flex; 
+            flex-direction: column; align-items: center; padding: 10px; min-height: 100vh;
         }
         .magic-card { 
-            background: rgba(255, 255, 255, 0.15); 
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);
             padding: 20px; border: 3px solid var(--disney-gold);
             border-radius: 20px; width: 95%; max-width: 500px; text-align: center;
             box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
-        h1 { 
-            font-size: 1.8rem; margin-bottom: 5px; 
-            color: var(--disney-gold);
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            letter-spacing: 1px;
-        }
+        h1 { color: var(--disney-gold); text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-top: 0; }
+        
         #status-msg { 
-            background: rgba(255, 255, 255, 0.9); 
-            padding: 10px; border-radius: 50px;
-            margin-bottom: 15px; color: var(--disney-purple); 
-            font-weight: bold; font-size: 0.85rem;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+            background: white; padding: 8px 15px; border-radius: 50px;
+            margin-bottom: 15px; color: var(--disney-purple); font-weight: bold; font-size: 0.9rem;
         }
 
-        /* 4x3 Grid Styling */
-        .grid { 
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0;
-        }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0; }
+        
         .character-box { 
-            position: relative; background: #fff; border: 4px solid #fff;
-            aspect-ratio: 1/1; cursor: pointer; overflow: hidden; border-radius: 15px;
-            transition: transform 0.2s, border-color 0.2s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            position: relative; background: #fff; border: 3px solid #fff;
+            aspect-ratio: 1/1; cursor: pointer; overflow: hidden; border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3); transition: transform 0.2s;
         }
         .character-box img { 
-            width: 100%; height: 100%; 
-            object-fit: cover; 
-            object-position: center 15%; 
+            width: 100%; height: 100%; object-fit: contain; padding: 5px;
+            background: white;
         }
         
         .char-name-label {
             position: absolute; bottom: 0; width: 100%;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8)); 
-            color: white; font-size: 0.6rem; padding: 5px 0; text-align: center;
+            background: rgba(0,0,0,0.6); color: white; font-size: 0.55rem; padding: 2px 0;
         }
 
-        /* Disney "X" Elimination (Sparkly/Canceled feel) */
         .character-box.eliminated::after {
             content: "✘"; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6); color: var(--disney-pink); font-size: 3.5rem;
+            background: rgba(0, 0, 0, 0.6); color: var(--disney-pink); font-size: 3rem;
             display: flex; align-items: center; justify-content: center; font-weight: bold;
         }
-        .character-box.selected { border: 4px solid var(--disney-gold); transform: scale(1.05); }
+        .character-box.selected { border: 4px solid #00ff88; transform: scale(1.05); z-index: 5; }
 
         .btn { 
             padding: 12px 20px; border: none; border-radius: 50px;
-            background: var(--disney-gold); color: #333;
-            font-weight: bold; cursor: pointer; margin: 5px; 
-            text-transform: uppercase; font-size: 0.8rem;
-            box-shadow: 0 4px 0px #b8860b; transition: 0.1s;
+            background: var(--disney-gold); color: #333; font-weight: bold; cursor: pointer; margin: 5px; 
+            box-shadow: 0 4px 0 #b8860b;
         }
-        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0px #b8860b; }
-        .btn:disabled { background: #ccc; box-shadow: none; color: #777; cursor: not-allowed; }
-        
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b8860b; }
+        .btn:disabled { background: #ccc; color: #777; box-shadow: none; }
         .hidden { display: none; }
-        .q-badge { color: white; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="magic-card">
     <h1>Disney Magic Duel</h1>
-    <div id="status-msg">✨ Wish upon a star to connect ✨</div>
+    <div id="status-msg">✨ Connecting to Magic...</div>
 
     <div id="setup-area">
-        <p>Who are you playing as?</p>
         <button class="btn" onclick="joinGame(1)" id="p1Btn">Player 1</button>
-        <button class="btn" onclick="joinGame(2)" id="p2Btn" style="background:var(--disney-pink); color:white;">Player 2</button>
+        <button class="btn" onclick="joinGame(2)" id="p2Btn" style="background:var(--disney-pink); color:white; box-shadow: 0 4px 0 #9e1b5b;">Player 2</button>
         <br><br>
-        <small style="color:rgba(255,255,255,0.6); cursor:pointer;" onclick="resetGame()">[ Reset All Magic ]</small>
+        <small style="color:white; opacity:0.6; cursor:pointer;" onclick="resetGame()">[ Force Reset Room ]</small>
     </div>
 
     <div id="game-area" class="hidden">
-        <div id="instruction-text" style="color:var(--disney-gold);">Select your Secret Character!</div>
-        
+        <div id="instruction-text" style="color:var(--disney-gold); font-weight:bold;">Pick your Secret Character!</div>
         <div class="grid" id="characterGrid"></div>
         
         <div id="controls">
             <button class="btn" id="confirmPickBtn" onclick="confirmSecretPick()">Confirm Selection</button>
-            
             <div id="guessControls" class="hidden">
-                <span class="q-badge">Questions Asked: <span id="qCount">0</span>/3</span>
-                <button class="btn" onclick="incrementQuestion()">Add Question</button>
-                <button class="btn" style="background:white; color:var(--disney-purple);" onclick="submitFinalGuess()">Final Guess!</button>
+                <p>Questions Used: <span id="qCount" style="font-weight:bold;">0</span>/3</p>
+                <button class="btn" onclick="incrementQuestion()">Log Question</button>
+                <button class="btn" style="background:white;" onclick="submitFinalGuess()">Final Guess!</button>
             </div>
         </div>
-        
-        <button class="btn hidden" id="resetBtn" onclick="resetGame()" style="width:100%; margin-top:20px; background:rgba(0,0,0,0.3); color:white; border:1px solid white;">Play Again</button>
+        <button class="btn hidden" id="resetBtn" onclick="resetGame()" style="width:100%; margin-top:20px;">Next Round (New Characters)</button>
     </div>
 </div>
 
@@ -135,45 +111,88 @@
     const db = getDatabase(app);
     const gameRef = ref(db, 'character_duel/session1');
 
-    const disneyChars = [
+    // --- THE MEGA BANK: 48 CHARACTERS ---
+    const characterVault = [
         { name: "Mickey", img: "https://img.icons8.com/color/200/mickey-mouse.png" },
         { name: "Minnie", img: "https://img.icons8.com/color/200/minnie-mouse.png" },
         { name: "Donald", img: "https://img.icons8.com/color/200/donald-duck.png" },
         { name: "Goofy", img: "https://img.icons8.com/color/200/goofy.png" },
-        { name: "Elsa", img: "https://static.wikia.nocookie.net/disney/images/1/12/Elsa_Frozen_2.png/revision/latest/scale-to-width-down/250" },
-        { name: "Simba", img: "https://static.wikia.nocookie.net/disney/images/3/37/Simba_The_Lion_King.png/revision/latest/scale-to-width-down/250" },
-        { name: "Woody", img: "https://static.wikia.nocookie.net/p__/images/7/70/Woody_Toy_Story_4.png/revision/latest/scale-to-width-down/250" },
-        { name: "Buzz", img: "https://static.wikia.nocookie.net/p__/images/d/d3/Buzz_Lightyear.png/revision/latest/scale-to-width-down/250" },
-        { name: "Stitch", img: "https://static.wikia.nocookie.net/p__/images/5/50/Stitch_Lilo_%26_Stitch.png/revision/latest/scale-to-width-down/250" },
-        { name: "Belle", img: "https://static.wikia.nocookie.net/disney/images/d/d3/Belle_Beauty_and_the_Beast.png/revision/latest/scale-to-width-down/250" },
-        { name: "Aladdin", img: "https://static.wikia.nocookie.net/p__/images/c/c3/Aladdin_Disney.png/revision/latest/scale-to-width-down/250" },
-        { name: "Ariel", img: "https://static.wikia.nocookie.net/p__/images/0/07/Ariel_The_Little_Mermaid.png/revision/latest/scale-to-width-down/250" }
+        { name: "Pluto", img: "https://img.icons8.com/color/200/pluto--v1.png" },
+        { name: "Stitch", img: "https://img.icons8.com/color/200/stitch.png" },
+        { name: "Simba", img: "https://img.icons8.com/color/200/lion-king.png" },
+        { name: "Winnie Pooh", img: "https://img.icons8.com/color/200/winnie-the-pooh.png" },
+        { name: "Tigger", img: "https://img.icons8.com/color/200/tigger.png" },
+        { name: "Piglet", img: "https://img.icons8.com/color/200/piglet.png" },
+        { name: "Cinderella", img: "https://img.icons8.com/color/200/cinderella.png" },
+        { name: "Snow White", img: "https://img.icons8.com/color/200/snow-white.png" },
+        { name: "Ariel", img: "https://img.icons8.com/color/200/the-little-mermaid.png" },
+        { name: "Belle", img: "https://img.icons8.com/color/200/beauty-and-the-beast.png" },
+        { name: "Woody", img: "https://img.icons8.com/color/200/woody.png" },
+        { name: "Buzz", img: "https://img.icons8.com/color/200/buzz-lightyear.png" },
+        { name: "Mike W.", img: "https://img.icons8.com/color/200/mike-wazowski.png" },
+        { name: "Sully", img: "https://img.icons8.com/color/200/sullivan.png" },
+        { name: "Wall-E", img: "https://img.icons8.com/color/200/wall-e.png" },
+        { name: "Nemo", img: "https://img.icons8.com/color/200/nemo.png" },
+        { name: "Elsa", img: "https://img.icons8.com/color/200/elsa.png" },
+        { name: "Anna", img: "https://img.icons8.com/color/200/anna.png" },
+        { name: "Olaf", img: "https://img.icons8.com/color/200/olaf.png" },
+        { name: "Pocahontas", img: "https://img.icons8.com/color/200/pocahontas.png" },
+        { name: "Mulan", img: "https://img.icons8.com/color/200/mulan.png" },
+        { name: "Aladdin", img: "https://img.icons8.com/color/200/aladdin.png" },
+        { name: "Jasmine", img: "https://img.icons8.com/color/200/jasmine.png" },
+        { name: "Genie", img: "https://img.icons8.com/color/200/genie.png" },
+        { name: "Peter Pan", img: "https://img.icons8.com/color/200/peter-pan.png" },
+        { name: "Tinkerbell", img: "https://img.icons8.com/color/200/tinkerbell.png" },
+        { name: "Lightning", img: "https://img.icons8.com/color/200/lightning-mcqueen.png" },
+        { name: "Mater", img: "https://img.icons8.com/color/200/tow-mater.png" },
+        { name: "Dory", img: "https://img.icons8.com/color/200/dory.png" },
+        { name: "Remy", img: "https://img.icons8.com/color/200/ratatouille.png" },
+        { name: "Mr. Incredible", img: "https://img.icons8.com/color/200/mr-incredible.png" },
+        { name: "Jack Jack", img: "https://img.icons8.com/color/200/jack-jack.png" },
+        { name: "Pinocchio", img: "https://img.icons8.com/color/200/pinocchio.png" },
+        { name: "Bambi", img: "https://img.icons8.com/color/200/bambi.png" },
+        { name: "Dumbo", img: "https://img.icons8.com/color/200/dumbo.png" },
+        { name: "Baymax", img: "https://img.icons8.com/color/200/baymax.png" },
+        { name: "Moana", img: "https://img.icons8.com/color/200/moana.png" },
+        { name: "Maui", img: "https://img.icons8.com/color/200/maui.png" },
+        { name: "Hercules", img: "https://img.icons8.com/color/200/hercules.png" },
+        { name: "Alice", img: "https://img.icons8.com/color/200/alice-in-wonderland.png" },
+        { name: "Cheshire Cat", img: "https://img.icons8.com/color/200/cheshire-cat.png" },
+        { name: "Cruella", img: "https://img.icons8.com/color/200/cruella-de-vil.png" },
+        { name: "Maleficent", img: "https://img.icons8.com/color/200/maleficent.png" },
+        { name: "Ursula", img: "https://img.icons8.com/color/200/ursula.png" }
     ];
 
     let myRole = null;
     let selectedIdx = null;
     let gameState = {};
+    let currentPool = [];
 
     window.joinGame = async (num) => {
         const snap = await get(gameRef);
-        if (snap.val() && snap.val()[`p${num}Taken`]) return alert("Role is taken!");
+        let data = snap.val() || {};
+
+        if (!data.p1Taken && !data.p2Taken) {
+            const shuffled = [...characterVault].sort(() => 0.5 - Math.random());
+            data.pool = shuffled.slice(0, 12);
+            await set(gameRef, data);
+        }
+
         myRole = num;
         await update(gameRef, { [`p${num}Taken`]: true });
         document.getElementById('setup-area').classList.add('hidden');
         document.getElementById('game-area').classList.remove('hidden');
     };
 
-    function renderGrid() {
+    function renderGrid(pool) {
+        currentPool = pool;
         const grid = document.getElementById('characterGrid');
         grid.innerHTML = "";
-        disneyChars.forEach((char, index) => {
+        pool.forEach((char, index) => {
             const div = document.createElement('div');
             div.className = 'character-box';
             div.id = `char-${index}`;
-            div.innerHTML = `
-                <img src="${char.img}" onerror="this.src='https://via.placeholder.com/150?text=Error'">
-                <div class="char-name-label">${char.name}</div>
-            `;
+            div.innerHTML = `<img src="${char.img}"><div class="char-name-label">${char.name}</div>`;
             div.onclick = () => handleSquareClick(index);
             grid.appendChild(div);
         });
@@ -192,30 +211,28 @@
     }
 
     window.confirmSecretPick = () => {
-        if (selectedIdx === null) return alert("Select a character first!");
+        if (selectedIdx === null) return alert("Select a character!");
         update(gameRef, { [`p${myRole}Secret`]: selectedIdx });
         document.getElementById('confirmPickBtn').classList.add('hidden');
-        document.getElementById('instruction-text').innerText = "Waiting for your friend...";
+        document.getElementById('instruction-text').innerText = "Waiting for player...";
     };
 
     window.incrementQuestion = () => {
         const currentQ = (myRole === 1) ? (gameState.p1Questions || 0) : (gameState.p2Questions || 0);
-        if (currentQ >= 3) return alert("All 3 questions used!");
+        if (currentQ >= 3) return alert("Max 3 questions!");
         update(gameRef, { [`p${myRole}Questions`]: currentQ + 1 });
     };
 
     window.submitFinalGuess = () => {
-        const guess = prompt("Who do you think it is? (Type the name correctly)");
+        const guess = prompt("Who is it? (Type the name correctly)");
         if (!guess) return;
-        
         const targetIdx = (myRole === 1) ? gameState.p2Secret : gameState.p1Secret;
-        const targetName = disneyChars[targetIdx].name;
-
+        const targetName = currentPool[targetIdx].name;
         if (guess.toLowerCase() === targetName.toLowerCase()) {
-            alert("✨ MAGICAL! You found the right character! ✨");
+            alert("✨ MAGICAL! You found them! ✨");
             update(gameRef, { winner: myRole });
         } else {
-            alert(`Oh no! It was ${targetName}. Better luck next time!`);
+            alert(`Oh no! It was actually ${targetName}.`);
             update(gameRef, { winner: (myRole === 1 ? 2 : 1) });
         }
     };
@@ -225,29 +242,29 @@
         if (!data && myRole !== null) window.location.reload();
         gameState = data || {};
 
-        if (data) {
+        if (data && data.pool) {
+            if (document.getElementById('characterGrid').children.length === 0) renderGrid(data.pool);
+            
             document.getElementById('p1Btn').disabled = data.p1Taken;
             document.getElementById('p2Btn').disabled = data.p2Taken;
             
             if (data.p1Secret !== undefined && data.p2Secret !== undefined) {
                 document.getElementById('guessControls').classList.remove('hidden');
                 document.getElementById('confirmPickBtn').classList.add('hidden');
-                document.getElementById('instruction-text').innerText = "Eliminate characters to find the secret!";
+                document.getElementById('instruction-text').innerText = "Eliminate the wrong characters!";
                 document.getElementById('qCount').innerText = (myRole === 1) ? (data.p1Questions || 0) : (data.p2Questions || 0);
             }
 
             if (data.winner) {
-                document.getElementById('status-msg').innerText = "GAME OVER: Player " + data.winner + " Wins!";
+                document.getElementById('status-msg').innerText = "Victory for Player " + data.winner + "!";
                 document.getElementById('resetBtn').classList.remove('hidden');
             } else {
-                document.getElementById('status-msg').innerText = "The magic is happening...";
+                document.getElementById('status-msg').innerText = "Game in progress...";
             }
         }
     });
 
     window.resetGame = () => remove(gameRef);
-
-    renderGrid();
 </script>
 </body>
 </html>

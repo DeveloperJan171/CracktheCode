@@ -3,98 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Breaker Duel</title>
+    <title>Code Breaker: Online Duel</title>
     <style>
         body { font-family: sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .setup-container, .game-container { background: #1e1e1e; padding: 25px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); width: 90%; max-width: 500px; text-align: center; }
-        .turn-banner { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; padding: 10px; border-radius: 8px; background: #333; color: #00ff88; }
-        input { width: 120px; padding: 10px; font-size: 1.5rem; text-align: center; letter-spacing: 8px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; margin: 10px; }
-        button { padding: 12px 25px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background: #00ff88; color: #000; font-weight: bold; }
-        .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
-        .log { background: #111; padding: 10px; border-radius: 5px; font-size: 0.8rem; height: 150px; overflow-y: auto; text-align: left; }
+        .card { background: #1e1e1e; padding: 25px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); width: 90%; max-width: 450px; text-align: center; }
+        .turn-banner { font-size: 1.4rem; padding: 10px; margin-bottom: 20px; border-radius: 8px; background: #333; transition: 0.3s; }
+        input { width: 140px; padding: 10px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; margin: 10px; }
+        button { padding: 12px 25px; border: none; border-radius: 5px; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; }
+        .log { background: #111; padding: 10px; border-radius: 5px; height: 120px; overflow-y: auto; font-size: 0.9rem; margin-top: 10px; text-align: left; border: 1px solid #333; }
         .hidden { display: none; }
-        .p1-color { color: #00d4ff; }
-        .p2-color { color: #ff8800; }
     </style>
 </head>
 <body>
 
-    <div id="setup" class="setup-container">
-        <h2 id="setup-title">Player 1: Set your Secret Code</h2>
-        <input type="password" id="secretInput" maxlength="4" placeholder="****">
-        <br>
-        <button onclick="handleSetup()">Confirm Code</button>
+<div class="card">
+    <h1 style="color:#00ff88">Code Duel Online</h1>
+    
+    <div id="player-select">
+        <p>Who are you?</p>
+        <button onclick="choosePlayer(1)">Player 1</button>
+        <button onclick="choosePlayer(2)" style="background:#00d4ff">Player 2</button>
     </div>
 
-    <div id="game" class="game-container hidden">
-        <div id="turnBanner" class="turn-banner">Player 1's Turn</div>
-        <p>Enter your 4-digit guess:</p>
-        <input type="text" id="guessInput" maxlength="4" placeholder="0000">
+    <div id="setup" class="hidden">
+        <h3 id="setup-title">Set your Secret Code</h3>
+        <input type="password" id="secretInput" maxlength="4">
         <br>
-        <button onclick="processTurn()">Submit Guess</button>
+        <button onclick="lockCode()">Lock Secret</button>
+    </div>
 
-        <div class="history-grid">
-            <div>
-                <small class="p1-color">P1's Guesses</small>
-                <div id="p1Log" class="log"></div>
-            </div>
-            <div>
-                <small class="p2-color">P2's Guesses</small>
-                <div id="p2Log" class="log"></div>
-            </div>
+    <div id="game" class="hidden">
+        <div id="turnBanner" class="turn-banner">Waiting...</div>
+        <input type="text" id="guessInput" maxlength="4" placeholder="Guess">
+        <br>
+        <button id="submitBtn" onclick="submitGuess()">Submit Guess</button>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+            <div><small>P1 Guesses</small><div id="p1Log" class="log"></div></div>
+            <div><small>P2 Guesses</small><div id="p2Log" class="log"></div></div>
         </div>
     </div>
+</div>
 
-<script>
-    let codes = { p1: "", p2: "" };
-    let currentPlayer = 1;
-    let setupPhase = 1;
+<script type="module">
+    // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-    function handleSetup() {
-        const val = document.getElementById('secretInput').value;
-        if(val.length !== 4) return alert("Must be 4 digits");
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBM3nlqtQ-vyiUDvZ0_D-eBSs6NMoGxqmQ",
+  authDomain: "crackthecode-6c93a.firebaseapp.com",
+  databaseURL: "https://crackthecode-6c93a-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "crackthecode-6c93a",
+  storageBucket: "crackthecode-6c93a.firebasestorage.app",
+  messagingSenderId: "225093072210",
+  appId: "1:225093072210:web:70db22240fdb9db5e3f68b",
+  measurementId: "G-LPMVCD2C3X"
+};
 
-        if(setupPhase === 1) {
-            codes.p1 = val;
-            setupPhase = 2;
-            document.getElementById('secretInput').value = "";
-            document.getElementById('setup-title').innerText = "Player 2: Set your Secret Code";
-        } else {
-            codes.p2 = val;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const gameRef = ref(db, 'game/session1'); // "session1" is your room name
+
+    let myRole = null;
+    let gameState = {};
+
+    window.choosePlayer = (num) => {
+        myRole = num;
+        document.getElementById('player-select').classList.add('hidden');
+        document.getElementById('setup').classList.remove('hidden');
+    };
+
+    window.lockCode = () => {
+        const code = document.getElementById('secretInput').value;
+        if(code.length !== 4) return alert("Must be 4 digits");
+        
+        const updates = {};
+        updates[`p${myRole}Code`] = code;
+        updates[`p${myRole}Ready`] = true;
+        update(gameRef, updates);
+        
+        document.getElementById('setup').innerHTML = "<h3>Code Locked! Waiting for opponent...</h3>";
+    };
+
+    // Listen for changes from both players
+    onValue(gameRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        gameState = data;
+
+        if (data.p1Ready && data.p2Ready) {
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
+            updateUI(data);
         }
+    });
+
+    function updateUI(data) {
+        const turn = data.turn || 1;
+        const banner = document.getElementById('turnBanner');
+        banner.innerText = (turn === myRole) ? "YOUR TURN" : "OPPONENT'S TURN";
+        banner.style.background = (turn === myRole) ? "#004d2c" : "#333";
+        document.getElementById('submitBtn').disabled = (turn !== myRole);
+
+        // Update Logs
+        renderLog('p1Log', data.p1Guesses);
+        renderLog('p2Log', data.p2Guesses);
     }
 
-    function processTurn() {
+    function renderLog(id, guesses) {
+        const el = document.getElementById(id);
+        el.innerHTML = "";
+        if(!guesses) return;
+        Object.values(guesses).reverse().forEach(g => {
+            el.innerHTML += `<div><b>${g.val}</b>: ${g.score}</div>`;
+        });
+    }
+
+    window.submitGuess = () => {
         const guess = document.getElementById('guessInput').value;
         if(guess.length !== 4) return;
 
-        // Player 1 tries to guess Player 2's code and vice versa
-        const targetCode = (currentPlayer === 1) ? codes.p2 : codes.p1;
-        let correct = 0;
+        const enemyCode = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
+        let score = 0;
+        for(let i=0; i<4; i++) if(guess[i] === enemyCode[i]) score++;
 
-        for(let i=0; i<4; i++) {
-            if(guess[i] === targetCode[i]) correct++;
-        }
-
-        const logId = (currentPlayer === 1) ? 'p1Log' : 'p2Log';
-        const logEntry = document.createElement('div');
-        logEntry.innerHTML = `<b>${guess}</b>: ${correct} Correct`;
-        document.getElementById(logId).prepend(logEntry);
-
-        if(correct === 4) {
-            alert(`VICTORY! Player ${currentPlayer} cracked the code!`);
-            location.reload();
-            return;
-        }
-
-        // Switch Turns
-        currentPlayer = (currentPlayer === 1) ? 2 : 1;
-        document.getElementById('turnBanner').innerText = `Player ${currentPlayer}'s Turn`;
-        document.getElementById('turnBanner').style.color = (currentPlayer === 1) ? '#00d4ff' : '#ff8800';
+        // Push guess to Firebase
+        const newGuessRef = ref(db, `game/session1/p${myRole}Guesses/`);
+        const nextTurn = (myRole === 1) ? 2 : 1;
+        
+        update(gameRef, { turn: nextTurn });
+        set(ref(db, `game/session1/p${myRole}Guesses/${Date.now()}`), { val: guess, score: score });
+        
+        if(score === 4) alert("YOU WON!");
         document.getElementById('guessInput').value = "";
-    }
+    };
 </script>
 </body>
 </html>

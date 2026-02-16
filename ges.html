@@ -10,12 +10,12 @@
         .turn-banner { font-size: 1.4rem; padding: 10px; margin-bottom: 20px; border-radius: 8px; background: #333; font-weight: bold; }
         input { width: 140px; padding: 10px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; margin: 10px; }
         button { padding: 12px 25px; border: none; border-radius: 5px; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; margin: 5px; }
-        button:disabled { background: #444; cursor: not-allowed; }
+        button:disabled { background: #444; cursor: not-allowed; opacity: 0.5; }
         .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .log { background: #111; padding: 10px; border-radius: 5px; height: 150px; overflow-y: auto; font-size: 0.85rem; text-align: left; border: 1px solid #333; }
+        .log { background: #111; padding: 10px; border-radius: 5px; height: 180px; overflow-y: auto; font-size: 0.85rem; text-align: left; border: 1px solid #333; }
         .hidden { display: none; }
-        .p1-text { color: #00d4ff; }
-        .p2-text { color: #ff8800; }
+        .p1-text { color: #00d4ff; font-weight: bold; }
+        .p2-text { color: #ff8800; font-weight: bold; }
         #resetBtn { background: #ff4444; color: white; margin-top: 20px; width: 100%; }
     </style>
 </head>
@@ -25,21 +25,22 @@
     <h1 style="color:#00ff88">Crack The Code</h1>
     
     <div id="player-select">
-        <p>Select your role:</p>
+        <p>Choose your side:</p>
         <button onclick="choosePlayer(1)">Player 1</button>
         <button onclick="choosePlayer(2)" style="background:#00d4ff">Player 2</button>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">Refreshing the page will reset the game for everyone.</p>
     </div>
 
     <div id="setup" class="hidden">
         <h3 id="setup-title">Set your Secret Code</h3>
-        <input type="password" id="secretInput" maxlength="4" placeholder="****">
+        <input type="password" id="secretInput" maxlength="4" placeholder="****" inputmode="numeric">
         <br>
         <button onclick="lockCode()">Confirm Secret</button>
     </div>
 
     <div id="game" class="hidden">
-        <div id="turnBanner" class="turn-banner">Connecting...</div>
-        <input type="text" id="guessInput" maxlength="4" placeholder="0000">
+        <div id="turnBanner" class="turn-banner">Waiting for Opponent...</div>
+        <input type="text" id="guessInput" maxlength="4" placeholder="0000" inputmode="numeric">
         <br>
         <button id="submitBtn" onclick="submitGuess()">Submit Guess</button>
         
@@ -48,7 +49,7 @@
             <div><small class="p2-text">P2 Guesses</small><div id="p2Log" class="log"></div></div>
         </div>
 
-        <button id="resetBtn" class="hidden" onclick="resetGame()">RESET FOR NEW GAME</button>
+        <button id="resetBtn" class="hidden" onclick="resetGame()">RESTART GAME</button>
     </div>
 </div>
 
@@ -56,6 +57,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    // Your Firebase configuration
     const firebaseConfig = {
         apiKey: "AIzaSyBM3nlqtQ-vyiUDvZ0_D-eBSs6NMoGxqmQ",
         authDomain: "crackthecode-6c93a.firebaseapp.com",
@@ -73,30 +75,45 @@
     let myRole = null;
     let gameState = {};
 
+    // --- REFRESH LOGIC ---
+    // When the page is loaded/refreshed, we clear the current session.
+    remove(gameRef);
+
     window.choosePlayer = (num) => {
         myRole = num;
         document.getElementById('player-select').classList.add('hidden');
         document.getElementById('setup').classList.remove('hidden');
+        document.getElementById('setup-title').innerText = `Player ${myRole}: Set Secret Code`;
     };
 
     window.lockCode = () => {
         const val = document.getElementById('secretInput').value;
-        if(val.length !== 4) return alert("Enter 4 digits");
-        update(gameRef, { [`p${myRole}Code`]: val, [`p${myRole}Ready`]: true, turn: 1 });
-        document.getElementById('setup').innerHTML = "<h3>Locked! Waiting for opponent...</h3>";
+        if(val.length !== 4) return alert("Enter exactly 4 digits");
+        
+        const updates = {};
+        updates[`p${myRole}Code`] = val;
+        updates[`p${myRole}Ready`] = true;
+        // Reset turn to Player 1 whenever codes are set
+        updates['turn'] = 1; 
+        
+        update(gameRef, updates);
+        document.getElementById('setup').innerHTML = "<h3>Code Locked!</h3><p>Waiting for the other player...</p>";
     };
 
     onValue(gameRef, (snapshot) => {
         const data = snapshot.val();
         
-        // If data is null, someone hit reset!
+        // If data is deleted (by a refresh or reset button), go back to start
         if (!data) {
-            location.reload(); // Refresh the page to start over
+            if (myRole !== null) {
+                window.location.reload(); 
+            }
             return;
         }
 
         gameState = data;
 
+        // Start game only when both codes are in
         if (data.p1Ready && data.p2Ready) {
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
@@ -108,27 +125,28 @@
         const turn = data.turn || 1;
         const banner = document.getElementById('turnBanner');
         
-        banner.innerText = (turn === myRole) ? "YOUR TURN" : "OPPONENT'S TURN";
-        banner.style.color = (turn === myRole) ? "#00ff88" : "#888";
-        document.getElementById('submitBtn').disabled = (turn !== myRole);
+        if (data.winner) {
+            banner.innerText = (data.winner === myRole) ? "🏆 YOU WON!" : "💀 DEFEAT!";
+            banner.style.color = (data.winner === myRole) ? "#00ff88" : "#ff4444";
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('resetBtn').classList.remove('hidden');
+        } else {
+            banner.innerText = (turn === myRole) ? "YOUR TURN" : "OPPONENT'S TURN";
+            banner.style.color = (turn === myRole) ? "#00ff88" : "#888";
+            document.getElementById('submitBtn').disabled = (turn !== myRole);
+        }
 
         renderLog('p1Log', data.p1Guesses);
         renderLog('p2Log', data.p2Guesses);
-
-        // Show reset button if someone has won
-        if (data.winner) {
-            banner.innerText = (data.winner === myRole) ? "🏆 YOU WON!" : "💀 OPPONENT WON";
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('resetBtn').classList.remove('hidden');
-        }
     }
 
     function renderLog(id, guesses) {
         const el = document.getElementById(id);
         el.innerHTML = "";
         if(!guesses) return;
+        // Show newest guesses at the top
         Object.values(guesses).reverse().forEach(g => {
-            el.innerHTML += `<div><b>${g.val}</b> → ${g.score}</div>`;
+            el.innerHTML += `<div style="border-bottom:1px solid #333; padding:5px 0;"><b>${g.val}</b> → ${g.score} Correct</div>`;
         });
     }
 
@@ -138,18 +156,24 @@
 
         const opponentCode = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
         let score = 0;
-        for(let i=0; i<4; i++) if(guess[i] === opponentCode[i]) score++;
+        
+        // YOUR STRICT LOGIC: Exact spot only
+        for(let i=0; i<4; i++) {
+            if(guess[i] === opponentCode[i]) score++;
+        }
 
-        const updates = { turn: (myRole === 1 ? 2 : 1) };
+        const nextTurn = (myRole === 1) ? 2 : 1;
+        const updates = { turn: nextTurn };
         if (score === 4) updates.winner = myRole;
 
         update(gameRef, updates);
+        // Save guess with a timestamp to keep them unique
         set(ref(db, `game_sessions/demo/p${myRole}Guesses/${Date.now()}`), { val: guess, score: score });
+        
         document.getElementById('guessInput').value = "";
     };
 
     window.resetGame = () => {
-        // This removes the 'demo' node from Firebase, clearing everything
         remove(gameRef);
     };
 </script>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detective Duel: Disney Edition</title>
+    <style>
+        :root {
+            --conan-blue: #002b5e;
+            --conan-red: #e60012;
+            --conan-gold: #f9d71c;
+        }
+        body { 
+            font-family: 'Courier New', monospace; background: #0a0a0a; color: white; 
+            display: flex; flex-direction: column; align-items: center; padding: 10px;
+        }
+        .card { 
+            background: var(--conan-blue); padding: 20px; border: 4px solid white;
+            border-radius: 5px; width: 95%; max-width: 500px; text-align: center;
+        }
+        h1 { color: var(--conan-gold); font-size: 1.5rem; margin: 0 0 10px 0; }
+        
+        /* The 4x3 Grid */
+        .grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;
+        }
+        .character-box { 
+            position: relative; background: #fff; border: 3px solid var(--conan-gold);
+            aspect-ratio: 1/1; cursor: pointer; overflow: hidden; border-radius: 5px;
+        }
+        .character-box img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* The "X" Mark */
+        .character-box.eliminated::after {
+            content: "X"; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(230, 0, 18, 0.7); color: white; font-size: 3rem;
+            display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .character-box.selected { border: 5px solid #00ff88; transform: scale(1.05); }
+
+        .btn { 
+            padding: 10px 20px; border: none; background: var(--conan-red); 
+            color: white; font-weight: bold; cursor: pointer; margin: 5px;
+        }
+        .hidden { display: none; }
+        #status-msg { background: rgba(0,0,0,0.5); padding: 10px; margin-bottom: 10px; color: var(--conan-gold); }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Disney Case File</h1>
+    <div id="status-msg">Connecting to Headquarters...</div>
+
+    <div id="setup-area">
+        <button class="btn" onclick="joinGame(1)" id="p1Btn">Detective 1</button>
+        <button class="btn" onclick="joinGame(2)" id="p2Btn" style="background:#00d4ff; color:black;">Detective 2</button>
+        <p style="font-size:0.7rem; margin-top:10px;">Refreshing resets the game.</p>
+    </div>
+
+    <div id="game-area" class="hidden">
+        <div id="instruction-text">Pick your secret character!</div>
+        <div class="grid" id="characterGrid"></div>
+        
+        <div id="controls">
+            <button class="btn" id="confirmPickBtn" onclick="confirmSecretPick()">Confirm Selection</button>
+            <div id="guessControls" class="hidden">
+                <p>Questions Asked: <span id="qCount">0</span>/3</p>
+                <button class="btn" onclick="incrementQuestion()">Ask Question</button>
+                <button class="btn" style="background:var(--conan-gold); color:black;" onclick="submitFinalGuess()">Final Guess!</button>
+            </div>
+        </div>
+        <button class="btn hidden" id="resetBtn" onclick="resetGame()" style="width:100%">New Case</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // --- PASTE YOUR FIREBASE CONFIG HERE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBM3nlqtQ-vyiUDvZ0_D-eBSs6NMoGxqmQ",
+        authDomain: "crackthecode-6c93a.firebaseapp.com",
+        databaseURL: "https://crackthecode-6c93a-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "crackthecode-6c93a",
+        storageBucket: "crackthecode-6c93a.firebasestorage.app",
+        messagingSenderId: "225093072210",
+        appId: "1:225093072210:web:70db22240fdb9db5e3f68b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const gameRef = ref(db, 'character_duel/session1');
+
+    const disneyChars = [
+        { name: "Mickey", img: "https://upload.wikimedia.org/wikipedia/en/d/d4/Mickey_Mouse.png" },
+        { name: "Minnie", img: "https://upload.wikimedia.org/wikipedia/en/6/67/Minnie_Mouse.png" },
+        { name: "Donald", img: "https://upload.wikimedia.org/wikipedia/en/b/b4/Donald_Duck.png" },
+        { name: "Goofy", img: "https://upload.wikimedia.org/wikipedia/en/a/a6/Goofy.png" },
+        { name: "Elsa", img: "https://upload.wikimedia.org/wikipedia/en/5/5e/Elsa_from_Disney%27s_Frozen.png" },
+        { name: "Simba", img: "https://upload.wikimedia.org/wikipedia/en/9/94/Simba_Adult.png" },
+        { name: "Woody", img: "https://upload.wikimedia.org/wikipedia/en/0/01/Sheriff_Woody.png" },
+        { name: "Buzz", img: "https://upload.wikimedia.org/wikipedia/en/b/b4/Buzz_Lightyear.png" },
+        { name: "Stitch", img: "https://upload.wikimedia.org/wikipedia/en/d/d2/Stitch_%28Lilo_%26_Stitch%29.png" },
+        { name: "Belle", img: "https://upload.wikimedia.org/wikipedia/en/a/ab/Belle_disney.png" },
+        { name: "Aladdin", img: "https://upload.wikimedia.org/wikipedia/en/d/dd/Aladdin_Disney_character.png" },
+        { name: "Ariel", img: "https://upload.wikimedia.org/wikipedia/en/7/77/Ariel_Disney_character.png" }
+    ];
+
+    let myRole = null;
+    let selectedIdx = null;
+    let gameState = {};
+
+    // Join Game Logic
+    window.joinGame = async (num) => {
+        const snap = await get(gameRef);
+        if (snap.val() && snap.val()[`p${num}Taken`]) return alert("Role Taken!");
+        myRole = num;
+        await update(gameRef, { [`p${num}Taken`]: true });
+        document.getElementById('setup-area').classList.add('hidden');
+        document.getElementById('game-area').classList.remove('hidden');
+    };
+
+    // Render Grid
+    function renderGrid() {
+        const grid = document.getElementById('characterGrid');
+        grid.innerHTML = "";
+        disneyChars.forEach((char, index) => {
+            const div = document.createElement('div');
+            div.className = 'character-box';
+            div.id = `char-${index}`;
+            div.innerHTML = `<img src="${char.img}" alt="${char.name}">`;
+            div.onclick = () => handleSquareClick(index);
+            grid.appendChild(div);
+        });
+    }
+
+    function handleSquareClick(index) {
+        // If picking secret character
+        if (!gameState.p1Secret || !gameState.p2Secret) {
+            if ((myRole === 1 && !gameState.p1Secret) || (myRole === 2 && !gameState.p2Secret)) {
+                document.querySelectorAll('.character-box').forEach(b => b.classList.remove('selected'));
+                document.getElementById(`char-${index}`).classList.add('selected');
+                selectedIdx = index;
+            }
+        } else {
+            // Gameplay mode: Mark as X
+            document.getElementById(`char-${index}`).classList.toggle('eliminated');
+        }
+    }
+
+    window.confirmSecretPick = () => {
+        if (selectedIdx === null) return alert("Pick a character first!");
+        update(gameRef, { [`p${myRole}Secret`]: selectedIdx });
+        document.getElementById('confirmPickBtn').classList.add('hidden');
+        document.getElementById('instruction-text').innerText = "Waiting for partner...";
+    };
+
+    window.incrementQuestion = () => {
+        const currentQ = (myRole === 1) ? (gameState.p1Questions || 0) : (gameState.p2Questions || 0);
+        if (currentQ >= 3) return alert("Max questions reached!");
+        update(gameRef, { [`p${myRole}Questions`]: currentQ + 1 });
+    };
+
+    window.submitFinalGuess = () => {
+        const eliminated = document.querySelectorAll('.eliminated').length;
+        if (eliminated === 0) return alert("Narrow down your choices first!");
+        
+        // This is where they pick the winner. For simplicity:
+        const guess = prompt("Who is your final guess? (Type the name correctly)");
+        const opponentSecretIdx = (myRole === 1) ? gameState.p2Secret : gameState.p1Secret;
+        const opponentSecretName = disneyChars[opponentSecretIdx].name;
+
+        if (guess.toLowerCase() === opponentSecretName.toLowerCase()) {
+            alert("CORRECT! Case Closed!");
+            update(gameRef, { winner: myRole });
+        } else {
+            alert(`WRONG! It was ${opponentSecretName}. You've been outsmarted!`);
+            update(gameRef, { winner: (myRole === 1 ? 2 : 1) });
+        }
+    };
+
+    // Sync Game State
+    onValue(gameRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data && myRole !== null) window.location.reload();
+        gameState = data || {};
+
+        // Update UI
+        if (data) {
+            document.getElementById('p1Btn').disabled = data.p1Taken;
+            document.getElementById('p2Btn').disabled = data.p2Taken;
+            
+            if (data.p1Secret !== undefined && data.p2Secret !== undefined) {
+                document.getElementById('guessControls').classList.remove('hidden');
+                document.getElementById('instruction-text').innerText = "Ask questions and mark the grid!";
+                document.getElementById('qCount').innerText = (myRole === 1) ? (data.p1Questions || 0) : (data.p2Questions || 0);
+            }
+
+            if (data.winner) {
+                document.getElementById('status-msg').innerText = `D${data.winner} SOLVED THE CASE!`;
+                document.getElementById('resetBtn').classList.remove('hidden');
+            } else {
+                document.getElementById('status-msg').innerText = "Case in Progress...";
+            }
+        }
+    });
+
+    window.resetGame = () => remove(gameRef);
+
+    renderGrid();
+</script>
+</body>
+</html>

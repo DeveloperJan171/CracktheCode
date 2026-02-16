@@ -16,6 +16,7 @@
         .hidden { display: none; }
         .p1-text { color: #00d4ff; }
         .p2-text { color: #ff8800; }
+        #resetBtn { background: #ff4444; color: white; margin-top: 20px; width: 100%; }
     </style>
 </head>
 <body>
@@ -24,13 +25,13 @@
     <h1 style="color:#00ff88">Crack The Code</h1>
     
     <div id="player-select">
-        <p>Select your role for this session:</p>
+        <p>Select your role:</p>
         <button onclick="choosePlayer(1)">Player 1</button>
         <button onclick="choosePlayer(2)" style="background:#00d4ff">Player 2</button>
     </div>
 
     <div id="setup" class="hidden">
-        <h3 id="setup-title">Set your Secret 4-Digit Code</h3>
+        <h3 id="setup-title">Set your Secret Code</h3>
         <input type="password" id="secretInput" maxlength="4" placeholder="****">
         <br>
         <button onclick="lockCode()">Confirm Secret</button>
@@ -46,14 +47,15 @@
             <div><small class="p1-text">P1 Guesses</small><div id="p1Log" class="log"></div></div>
             <div><small class="p2-text">P2 Guesses</small><div id="p2Log" class="log"></div></div>
         </div>
+
+        <button id="resetBtn" class="hidden" onclick="resetGame()">RESET FOR NEW GAME</button>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Your actual Firebase config
     const firebaseConfig = {
         apiKey: "AIzaSyBM3nlqtQ-vyiUDvZ0_D-eBSs6NMoGxqmQ",
         authDomain: "crackthecode-6c93a.firebaseapp.com",
@@ -75,24 +77,24 @@
         myRole = num;
         document.getElementById('player-select').classList.add('hidden');
         document.getElementById('setup').classList.remove('hidden');
-        document.getElementById('setup-title').innerText = `Player ${myRole}: Set your Secret Code`;
     };
 
     window.lockCode = () => {
         const val = document.getElementById('secretInput').value;
         if(val.length !== 4) return alert("Enter 4 digits");
-        
-        const updates = {};
-        updates[`p${myRole}Code`] = val;
-        updates[`p${myRole}Ready`] = true;
-        if (myRole === 1) updates['turn'] = 1; // P1 starts by default
-        
-        update(gameRef, updates);
+        update(gameRef, { [`p${myRole}Code`]: val, [`p${myRole}Ready`]: true, turn: 1 });
         document.getElementById('setup').innerHTML = "<h3>Locked! Waiting for opponent...</h3>";
     };
 
     onValue(gameRef, (snapshot) => {
-        const data = snapshot.val() || {};
+        const data = snapshot.val();
+        
+        // If data is null, someone hit reset!
+        if (!data) {
+            location.reload(); // Refresh the page to start over
+            return;
+        }
+
         gameState = data;
 
         if (data.p1Ready && data.p2Ready) {
@@ -106,18 +108,19 @@
         const turn = data.turn || 1;
         const banner = document.getElementById('turnBanner');
         
-        if (turn === myRole) {
-            banner.innerText = "YOUR TURN";
-            banner.style.color = "#00ff88";
-            document.getElementById('submitBtn').disabled = false;
-        } else {
-            banner.innerText = "OPPONENT'S TURN";
-            banner.style.color = "#888";
-            document.getElementById('submitBtn').disabled = true;
-        }
+        banner.innerText = (turn === myRole) ? "YOUR TURN" : "OPPONENT'S TURN";
+        banner.style.color = (turn === myRole) ? "#00ff88" : "#888";
+        document.getElementById('submitBtn').disabled = (turn !== myRole);
 
         renderLog('p1Log', data.p1Guesses);
         renderLog('p2Log', data.p2Guesses);
+
+        // Show reset button if someone has won
+        if (data.winner) {
+            banner.innerText = (data.winner === myRole) ? "🏆 YOU WON!" : "💀 OPPONENT WON";
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('resetBtn').classList.remove('hidden');
+        }
     }
 
     function renderLog(id, guesses) {
@@ -125,7 +128,7 @@
         el.innerHTML = "";
         if(!guesses) return;
         Object.values(guesses).reverse().forEach(g => {
-            el.innerHTML += `<div style="border-bottom:1px solid #222; padding:3px 0;"><b>${g.val}</b> → ${g.score} Correct</div>`;
+            el.innerHTML += `<div><b>${g.val}</b> → ${g.score}</div>`;
         });
     }
 
@@ -135,23 +138,20 @@
 
         const opponentCode = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
         let score = 0;
-        
-        // YOUR STRICT LOGIC: Only correct index matches count
-        for(let i=0; i<4; i++) {
-            if(guess[i] === opponentCode[i]) score++;
-        }
+        for(let i=0; i<4; i++) if(guess[i] === opponentCode[i]) score++;
 
-        const nextTurn = (myRole === 1) ? 2 : 1;
-        const guessData = { val: guess, score: score };
+        const updates = { turn: (myRole === 1 ? 2 : 1) };
+        if (score === 4) updates.winner = myRole;
 
-        // Push guess and switch turn
-        update(gameRef, { turn: nextTurn });
-        set(ref(db, `game_sessions/demo/p${myRole}Guesses/${Date.now()}`), guessData);
-        
-        if(score === 4) alert("🎉 YOU CRACKED THE CODE!");
+        update(gameRef, updates);
+        set(ref(db, `game_sessions/demo/p${myRole}Guesses/${Date.now()}`), { val: guess, score: score });
         document.getElementById('guessInput').value = "";
     };
-</script>
 
+    window.resetGame = () => {
+        // This removes the 'demo' node from Firebase, clearing everything
+        remove(gameRef);
+    };
+</script>
 </body>
 </html>

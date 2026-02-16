@@ -3,105 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detective Duel: Disney Case Files</title>
+    <title>Disney Magic: Character Duel</title>
     <style>
         :root {
-            --conan-blue: #002b5e;
-            --conan-red: #e60012;
-            --conan-gold: #f9d71c;
-            --paper-bg: #f4e4bc;
+            --disney-blue: #0066cc;
+            --disney-purple: #6a0dad;
+            --disney-gold: #ffd700;
+            --disney-pink: #ff69b4;
+            --bg-gradient: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
         }
         body { 
-            font-family: 'Courier New', monospace; background: #0a0a0a; 
-            background-image: radial-gradient(circle, #1a1a1a 10%, transparent 10%), radial-gradient(circle, #1a1a1a 10%, transparent 10%);
-            background-size: 20px 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-gradient); 
+            background-attachment: fixed;
             color: white; display: flex; flex-direction: column; align-items: center; padding: 10px;
+            min-height: 100vh;
         }
-        .card { 
-            background: var(--conan-blue); padding: 20px; border: 4px solid white;
-            border-radius: 5px; width: 95%; max-width: 500px; text-align: center;
-            position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        .magic-card { 
+            background: rgba(255, 255, 255, 0.15); 
+            backdrop-filter: blur(10px);
+            padding: 20px; border: 3px solid var(--disney-gold);
+            border-radius: 20px; width: 95%; max-width: 500px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
-        .card::before {
-            content: "CLASSIFIED"; position: absolute; top: 10px; right: -15px;
-            background: var(--conan-red); color: white; padding: 5px 15px; 
-            transform: rotate(15deg); font-weight: bold; font-size: 0.7rem;
+        h1 { 
+            font-size: 1.8rem; margin-bottom: 5px; 
+            color: var(--disney-gold);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 1px;
         }
-        h1 { color: var(--conan-gold); font-size: 1.5rem; margin-bottom: 10px; text-transform: uppercase; }
-        
-        #status-msg { background: rgba(0,0,0,0.6); padding: 8px; margin-bottom: 10px; color: var(--conan-gold); font-size: 0.8rem; border: 1px dashed var(--conan-gold); }
+        #status-msg { 
+            background: rgba(255, 255, 255, 0.9); 
+            padding: 10px; border-radius: 50px;
+            margin-bottom: 15px; color: var(--disney-purple); 
+            font-weight: bold; font-size: 0.85rem;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+        }
 
         /* 4x3 Grid Styling */
         .grid { 
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 15px 0;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 15px 0;
         }
         .character-box { 
-            position: relative; background: #fff; border: 3px solid var(--conan-gold);
-            aspect-ratio: 1/1; cursor: pointer; overflow: hidden; border-radius: 5px;
-            background-color: white;
+            position: relative; background: #fff; border: 4px solid #fff;
+            aspect-ratio: 1/1; cursor: pointer; overflow: hidden; border-radius: 15px;
+            transition: transform 0.2s, border-color 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         .character-box img { 
             width: 100%; height: 100%; 
             object-fit: cover; 
-            object-position: center 15%; /* Forces focus on the face/top of image */
+            object-position: center 15%; 
         }
         
         .char-name-label {
             position: absolute; bottom: 0; width: 100%;
-            background: rgba(0,0,0,0.7); color: white;
-            font-size: 0.55rem; padding: 2px 0; text-align: center;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8)); 
+            color: white; font-size: 0.6rem; padding: 5px 0; text-align: center;
         }
 
-        /* Elimination Mark */
+        /* Disney "X" Elimination (Sparkly/Canceled feel) */
         .character-box.eliminated::after {
-            content: "X"; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(230, 0, 18, 0.75); color: white; font-size: 3rem;
+            content: "✘"; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6); color: var(--disney-pink); font-size: 3.5rem;
             display: flex; align-items: center; justify-content: center; font-weight: bold;
         }
-        .character-box.selected { border: 5px solid #00ff88; transform: scale(1.02); }
+        .character-box.selected { border: 4px solid var(--disney-gold); transform: scale(1.05); }
 
         .btn { 
-            padding: 10px 15px; border: none; background: var(--conan-red); 
-            color: white; font-weight: bold; cursor: pointer; margin: 5px; text-transform: uppercase;
-            box-shadow: 2px 2px 0px #800000;
+            padding: 12px 20px; border: none; border-radius: 50px;
+            background: var(--disney-gold); color: #333;
+            font-weight: bold; cursor: pointer; margin: 5px; 
+            text-transform: uppercase; font-size: 0.8rem;
+            box-shadow: 0 4px 0px #b8860b; transition: 0.1s;
         }
-        .btn:disabled { background: #555; box-shadow: none; color: #888; }
-        .hidden { display: none; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px 0px #b8860b; }
+        .btn:disabled { background: #ccc; box-shadow: none; color: #777; cursor: not-allowed; }
         
-        .q-badge { background: #000; padding: 5px 10px; border-radius: 20px; border: 1px solid var(--conan-gold); color: var(--conan-gold); font-size: 0.8rem; }
+        .hidden { display: none; }
+        .q-badge { color: white; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h1>Disney Case File</h1>
-    <div id="status-msg">Awaiting Connection...</div>
+<div class="magic-card">
+    <h1>Disney Magic Duel</h1>
+    <div id="status-msg">✨ Wish upon a star to connect ✨</div>
 
     <div id="setup-area">
-        <p>Assign Detective Roles:</p>
-        <button class="btn" onclick="joinGame(1)" id="p1Btn">Detective 1</button>
-        <button class="btn" onclick="joinGame(2)" id="p2Btn" style="background:#00d4ff; color:black;">Detective 2</button>
+        <p>Who are you playing as?</p>
+        <button class="btn" onclick="joinGame(1)" id="p1Btn">Friend 1</button>
+        <button class="btn" onclick="joinGame(2)" id="p2Btn" style="background:var(--disney-pink); color:white;">Friend 2</button>
         <br><br>
-        <small style="color:#888; cursor:pointer;" onclick="resetGame()">[ Force Clear Room ]</small>
+        <small style="color:rgba(255,255,255,0.6); cursor:pointer;" onclick="resetGame()">[ Reset All Magic ]</small>
     </div>
 
     <div id="game-area" class="hidden">
-        <div id="instruction-text" style="color:var(--conan-gold); font-weight:bold;">Tap to pick your secret character</div>
+        <div id="instruction-text" style="color:var(--disney-gold);">Select your Secret Character!</div>
         
         <div class="grid" id="characterGrid"></div>
         
         <div id="controls">
-            <button class="btn" id="confirmPickBtn" onclick="confirmSecretPick()">Confirm Evidence</button>
+            <button class="btn" id="confirmPickBtn" onclick="confirmSecretPick()">Confirm Selection</button>
             
             <div id="guessControls" class="hidden">
-                <span class="q-badge">Questions: <span id="qCount">0</span>/3</span>
-                <br><br>
-                <button class="btn" onclick="incrementQuestion()">Log Question</button>
-                <button class="btn" style="background:var(--conan-gold); color:black;" onclick="submitFinalGuess()">Final Deduction!</button>
+                <span class="q-badge">Questions Asked: <span id="qCount">0</span>/3</span>
+                <button class="btn" onclick="incrementQuestion()">Add Question</button>
+                <button class="btn" style="background:white; color:var(--disney-purple);" onclick="submitFinalGuess()">Final Guess!</button>
             </div>
         </div>
         
-        <button class="btn hidden" id="resetBtn" onclick="resetGame()" style="width:100%; margin-top:15px; background:#444;">Close Case (Reset)</button>
+        <button class="btn hidden" id="resetBtn" onclick="resetGame()" style="width:100%; margin-top:20px; background:rgba(0,0,0,0.3); color:white; border:1px solid white;">Play Again</button>
     </div>
 </div>
 
@@ -144,7 +156,7 @@
 
     window.joinGame = async (num) => {
         const snap = await get(gameRef);
-        if (snap.val() && snap.val()[`p${num}Taken`]) return alert("Detective Spot Taken!");
+        if (snap.val() && snap.val()[`p${num}Taken`]) return alert("Role is taken!");
         myRole = num;
         await update(gameRef, { [`p${num}Taken`]: true });
         document.getElementById('setup-area').classList.add('hidden');
@@ -169,43 +181,41 @@
 
     function handleSquareClick(index) {
         if (gameState.p1Secret === undefined || gameState.p2Secret === undefined) {
-            // Secret Picking Phase
             if ((myRole === 1 && gameState.p1Secret === undefined) || (myRole === 2 && gameState.p2Secret === undefined)) {
                 document.querySelectorAll('.character-box').forEach(b => b.classList.remove('selected'));
                 document.getElementById(`char-${index}`).classList.add('selected');
                 selectedIdx = index;
             }
         } else {
-            // Investigation Phase: Toggle X
             document.getElementById(`char-${index}`).classList.toggle('eliminated');
         }
     }
 
     window.confirmSecretPick = () => {
-        if (selectedIdx === null) return alert("Select a target first!");
+        if (selectedIdx === null) return alert("Select a character first!");
         update(gameRef, { [`p${myRole}Secret`]: selectedIdx });
         document.getElementById('confirmPickBtn').classList.add('hidden');
-        document.getElementById('instruction-text').innerText = "Waiting for other Detective...";
+        document.getElementById('instruction-text').innerText = "Waiting for your friend...";
     };
 
     window.incrementQuestion = () => {
         const currentQ = (myRole === 1) ? (gameState.p1Questions || 0) : (gameState.p2Questions || 0);
-        if (currentQ >= 3) return alert("Maximum questions reached!");
+        if (currentQ >= 3) return alert("All 3 questions used!");
         update(gameRef, { [`p${myRole}Questions`]: currentQ + 1 });
     };
 
     window.submitFinalGuess = () => {
-        const guess = prompt("Who is the culprit? (Enter full name correctly)");
+        const guess = prompt("Who do you think it is? (Type the name correctly)");
         if (!guess) return;
         
         const targetIdx = (myRole === 1) ? gameState.p2Secret : gameState.p1Secret;
         const targetName = disneyChars[targetIdx].name;
 
         if (guess.toLowerCase() === targetName.toLowerCase()) {
-            alert("BINGO! Correct deduction!");
+            alert("✨ MAGICAL! You found the right character! ✨");
             update(gameRef, { winner: myRole });
         } else {
-            alert(`Wrong! The target was ${targetName}.`);
+            alert(`Oh no! It was ${targetName}. Better luck next time!`);
             update(gameRef, { winner: (myRole === 1 ? 2 : 1) });
         }
     };
@@ -222,15 +232,15 @@
             if (data.p1Secret !== undefined && data.p2Secret !== undefined) {
                 document.getElementById('guessControls').classList.remove('hidden');
                 document.getElementById('confirmPickBtn').classList.add('hidden');
-                document.getElementById('instruction-text').innerText = "Deduction Phase: Tap to eliminate characters.";
+                document.getElementById('instruction-text').innerText = "Eliminate characters to find the secret!";
                 document.getElementById('qCount').innerText = (myRole === 1) ? (data.p1Questions || 0) : (data.p2Questions || 0);
             }
 
             if (data.winner) {
-                document.getElementById('status-msg').innerText = "CASE CLOSED: Detective " + data.winner + " Won!";
+                document.getElementById('status-msg').innerText = "GAME OVER: Player " + data.winner + " Wins!";
                 document.getElementById('resetBtn').classList.remove('hidden');
             } else {
-                document.getElementById('status-msg').innerText = "Investigation in progress...";
+                document.getElementById('status-msg').innerText = "The magic is happening...";
             }
         }
     });

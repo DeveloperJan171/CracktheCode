@@ -16,59 +16,44 @@
             background: #0a0a0a; 
             background-image: radial-gradient(circle, #1a1a1a 10%, transparent 10%), radial-gradient(circle, #1a1a1a 10%, transparent 10%);
             background-size: 20px 20px;
-            color: #fff; 
-            display: flex; flex-direction: column; align-items: center; padding: 20px; 
+            color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; 
         }
         .card { 
-            background: var(--conan-blue); 
-            padding: 30px; 
-            border: 4px solid white;
-            border-radius: 5px; 
-            box-shadow: 0 0 0 4px var(--conan-blue), 0 20px 50px rgba(0,0,0,0.7); 
-            width: 95%; max-width: 480px; text-align: center;
-            position: relative;
+            background: var(--conan-blue); padding: 30px; border: 4px solid white;
+            border-radius: 5px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); 
+            width: 95%; max-width: 480px; text-align: center; position: relative;
         }
         .card::before {
-            content: "TOP SECRET";
-            position: absolute; top: 10px; right: -20px;
-            background: var(--conan-red); color: white;
-            padding: 5px 20px; transform: rotate(15deg);
-            font-weight: bold; font-size: 0.8rem; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-            z-index: 10;
+            content: "TOP SECRET"; position: absolute; top: 10px; right: -20px;
+            background: var(--conan-red); color: white; padding: 5px 20px; 
+            transform: rotate(15deg); font-weight: bold; font-size: 0.8rem; z-index: 10;
         }
-        h1 { color: var(--conan-gold); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
+        h1 { color: var(--conan-gold); text-transform: uppercase; margin-top: 0; }
         .turn-banner { 
             font-size: 1.2rem; padding: 15px; margin-bottom: 20px; 
-            border: 2px dashed var(--conan-gold); background: rgba(0,0,0,0.3);
-            font-weight: bold; color: var(--conan-gold);
+            border: 2px dashed var(--conan-gold); background: rgba(0,0,0,0.3); color: var(--conan-gold);
         }
         input { 
-            width: 160px; padding: 12px; font-size: 1.8rem; text-align: center; 
-            letter-spacing: 8px; border: 3px solid var(--conan-gold); 
+            width: 140px; padding: 12px; font-size: 1.8rem; text-align: center; 
+            letter-spacing: 5px; border: 3px solid var(--conan-gold); 
             background: #000; color: #fff; margin: 10px; 
         }
         button { 
             padding: 12px 25px; border: none; background: var(--conan-red); 
             color: white; font-weight: bold; cursor: pointer; text-transform: uppercase;
-            box-shadow: 3px 3px 0px #800000; transition: 0.1s;
+            box-shadow: 3px 3px 0px #800000;
         }
-        button:active { transform: translate(2px, 2px); box-shadow: none; }
-        button:disabled { background: #444 !important; box-shadow: none !important; color: #888 !important; cursor: not-allowed; }
+        button:disabled { background: #444 !important; box-shadow: none !important; color: #888 !important; }
         
-        .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .log { 
-            background: var(--paper-bg); color: #222; padding: 10px; 
-            border-radius: 2px; height: 200px; overflow-y: auto; 
-            font-size: 0.85rem; text-align: left; 
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            background: var(--paper-bg); color: #222; padding: 10px; height: 180px; 
+            overflow-y: auto; font-size: 0.8rem; text-align: left; 
             background-image: repeating-linear-gradient(transparent, transparent 19px, #d1c19d 20px);
-            line-height: 20px;
         }
         .hidden { display: none; }
-        .p1-label { color: #00d4ff; font-weight: bold; background: #000; padding: 2px 5px; }
-        .p2-label { color: #ff8800; font-weight: bold; background: #000; padding: 2px 5px; }
-        
-        #resetBtn { background: #333; margin-top: 20px; width: 100%; border: 2px solid white; }
+        .force-reset { margin-top: 30px; font-size: 0.7rem; color: #888; text-decoration: underline; cursor: pointer; }
+        .show-btn { background: none; box-shadow: none; color: var(--conan-gold); padding: 5px; font-size: 0.7rem; }
     </style>
 </head>
 <body>
@@ -80,30 +65,29 @@
         <p>Identify yourself, Detective:</p>
         <button id="p1SelectBtn" onclick="tryChoosePlayer(1)">Detective 1</button>
         <button id="p2SelectBtn" onclick="tryChoosePlayer(2)" style="background:#00d4ff; color: #000;">Detective 2</button>
-        <p style="font-size: 0.7rem; color: #888; margin-top: 15px;">Warning: One detective per role.</p>
+        <div class="force-reset" onclick="resetGame()">Room Stuck? Click here to Clear Evidence</div>
     </div>
 
     <div id="setup" class="hidden">
-        <h3 id="setup-title" style="color: var(--conan-gold);">Establish the Mystery</h3>
-        <p style="font-size: 0.8rem;">Set your 4-digit hidden code:</p>
-        <input type="password" id="secretInput" maxlength="4" placeholder="****" inputmode="numeric">
+        <h3 style="color: var(--conan-gold);">Set Secret Code</h3>
+        <input type="password" id="secretInput" maxlength="4" inputmode="numeric">
         <br>
+        <button class="show-btn" onclick="toggleSecret()">Show/Hide Code</button>
+        <br><br>
         <button onclick="lockCode()">Lock Evidence</button>
     </div>
 
     <div id="game" class="hidden">
-        <div id="turnBanner" class="turn-banner">🔍 Analyzing...</div>
+        <div id="turnBanner" class="turn-banner">Analyzing...</div>
         <input type="text" id="guessInput" maxlength="4" placeholder="0000" inputmode="numeric">
         <br>
         <button id="submitBtn" onclick="submitGuess()">Deduce!</button>
-        
         <div class="history-container">
-            <div><span class="p1-label">D1 Notes</span><div id="p1Log" class="log"></div></div>
-            <div><span class="p2-label">D2 Notes</span><div id="p2Log" class="log"></div></div>
+            <div><small style="color:#00d4ff">D1 Notes</small><div id="p1Log" class="log"></div></div>
+            <div><small style="color:#ff8800">D2 Notes</small><div id="p2Log" class="log"></div></div>
         </div>
-
-        <div id="revealArea" style="margin-top: 15px; color: var(--conan-gold); font-weight: bold;"></div>
-        <button id="resetBtn" class="hidden" onclick="resetGame()">Case Closed - Next Round</button>
+        <div id="revealArea" style="margin-top:10px; color:var(--conan-gold)"></div>
+        <button id="resetBtn" class="hidden" onclick="resetGame()" style="width:100%; margin-top:15px;">New Case</button>
     </div>
 </div>
 
@@ -128,29 +112,19 @@
     let myRole = null;
     let gameState = {};
 
-    // Listen for data changes
     onValue(gameRef, (snapshot) => {
         const data = snapshot.val();
         gameState = data || {};
 
-        // 1. Sync Role Selection Buttons
-        const p1Btn = document.getElementById('p1SelectBtn');
-        const p2Btn = document.getElementById('p2SelectBtn');
-        
-        if (data) {
-            if (data.p1Taken) { p1Btn.disabled = true; p1Btn.innerText = "D1 (OCCUPIED)"; }
-            else { p1Btn.disabled = false; p1Btn.innerText = "Detective 1"; }
-            
-            if (data.p2Taken) { p2Btn.disabled = true; p2Btn.innerText = "D2 (OCCUPIED)"; }
-            else { p2Btn.disabled = false; p2Btn.innerText = "Detective 2"; }
-        } else {
-            // No data means the game was reset
-            if (myRole !== null) window.location.reload();
-            p1Btn.disabled = false; p2Btn.disabled = false;
-            p1Btn.innerText = "Detective 1"; p2Btn.innerText = "Detective 2";
+        if (myRole === null) {
+            document.getElementById('p1SelectBtn').disabled = !!(data && data.p1Taken);
+            document.getElementById('p2SelectBtn').disabled = !!(data && data.p2Taken);
+            document.getElementById('p1SelectBtn').innerText = (data && data.p1Taken) ? "D1 (OCCUPIED)" : "Detective 1";
+            document.getElementById('p2SelectBtn').innerText = (data && data.p2Taken) ? "D2 (OCCUPIED)" : "Detective 2";
         }
 
-        // 2. Transition to Game
+        if (!data && myRole !== null) window.location.reload();
+
         if (data && data.p1Ready && data.p2Ready) {
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
@@ -159,76 +133,64 @@
     });
 
     window.tryChoosePlayer = async (num) => {
-        // Double check with server before allowing selection
-        const snapshot = await get(gameRef);
-        const data = snapshot.val() || {};
-        
-        if (data[`p${num}Taken`]) {
-            alert("This role was just taken by the other detective!");
-            return;
-        }
-
+        const snap = await get(gameRef);
+        const d = snap.val() || {};
+        if (d[`p${num}Taken`]) return alert("Spot taken!");
         myRole = num;
         await update(gameRef, { [`p${num}Taken`]: true });
         document.getElementById('player-select').classList.add('hidden');
         document.getElementById('setup').classList.remove('hidden');
     };
 
+    window.toggleSecret = () => {
+        const x = document.getElementById("secretInput");
+        x.type = (x.type === "password") ? "text" : "password";
+    };
+
     window.lockCode = () => {
         const val = document.getElementById('secretInput').value;
         if(val.length !== 4) return alert("Enter 4 digits");
         update(gameRef, { [`p${myRole}Code`]: val, [`p${myRole}Ready`]: true, turn: 1 });
-        document.getElementById('setup').innerHTML = `<h3 style="color:var(--conan-gold)">Evidence Locked!</h3><p>Wait for the other detective...</p>`;
+        document.getElementById('setup').innerHTML = "<h3>Locked!</h3><p>Waiting...</p>";
     };
 
     function updateUI(data) {
         const turn = data.turn || 1;
         const banner = document.getElementById('turnBanner');
-        
         if (data.winner) {
-            banner.innerText = (data.winner === myRole) ? "🏆 CASE SOLVED!" : "💀 OUTSMARTED!";
-            banner.style.background = (data.winner === myRole) ? "#006400" : "#640000";
-            document.getElementById('submitBtn').disabled = true;
+            banner.innerText = (data.winner === myRole) ? "🏆 CASE SOLVED!" : "💀 DEFEAT";
             document.getElementById('resetBtn').classList.remove('hidden');
-            document.getElementById('revealArea').innerHTML = `Target Code: ${myRole === 1 ? data.p2Code : data.p1Code}`;
+            document.getElementById('revealArea').innerText = "Code was: " + (myRole === 1 ? data.p2Code : data.p1Code);
         } else {
-            banner.innerText = (turn === myRole) ? "🔍 YOUR DEDUCTION" : "⌛ OPPONENT THINKING...";
-            document.getElementById('submitBtn').disabled = (turn !== myRole);
+            banner.innerText = (turn === myRole) ? "🔍 YOUR TURN" : "⌛ OPPONENT...";
         }
-
+        document.getElementById('submitBtn').disabled = (turn !== myRole || !!data.winner);
         renderLog('p1Log', data.p1Guesses);
         renderLog('p2Log', data.p2Guesses);
     }
 
     function renderLog(id, guesses) {
-        const el = document.getElementById(id);
-        el.innerHTML = "";
+        const el = document.getElementById(id); el.innerHTML = "";
         if(!guesses) return;
         Object.values(guesses).reverse().forEach(g => {
-            el.innerHTML += `<div style="margin-bottom:5px;">• <b>${g.val}</b>: ${g.score} Match</div>`;
+            el.innerHTML += `<div>• <b>${g.val}</b>: ${g.score}</div>`;
         });
     }
 
     window.submitGuess = () => {
-        const guess = document.getElementById('guessInput').value;
-        if(guess.length !== 4 || isNaN(guess)) return;
-
-        const opponentCode = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
-        let score = 0;
-        for(let i=0; i<4; i++) if(guess[i] === opponentCode[i]) score++;
-
-        const updates = { turn: (myRole === 1 ? 2 : 1) };
-        if (score === 4) updates.winner = myRole;
-
-        update(gameRef, updates);
-        set(ref(db, `game_sessions/demo/p${myRole}Guesses/${Date.now()}`), { val: guess, score: score });
+        const g = document.getElementById('guessInput').value;
+        if(g.length !== 4) return;
+        const target = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
+        let s = 0;
+        for(let i=0; i<4; i++) if(g[i] === target[i]) s++;
+        const up = { turn: (myRole === 1 ? 2 : 1) };
+        if (s === 4) up.winner = myRole;
+        update(gameRef, up);
+        set(ref(db, `game_sessions/demo/p${myRole}Guesses/${Date.now()}`), { val: g, score: s });
         document.getElementById('guessInput').value = "";
     };
 
-    window.resetGame = async () => {
-        await remove(gameRef);
-        window.location.reload();
-    };
+    window.resetGame = () => remove(gameRef).then(() => window.location.reload());
 </script>
 </body>
 </html>

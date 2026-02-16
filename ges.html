@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Breaker Duel</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .setup-container, .game-container { background: #1e1e1e; padding: 25px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); width: 90%; max-width: 500px; text-align: center; }
+        .turn-banner { font-size: 1.5rem; font-weight: bold; margin-bottom: 20px; padding: 10px; border-radius: 8px; background: #333; color: #00ff88; }
+        input { width: 120px; padding: 10px; font-size: 1.5rem; text-align: center; letter-spacing: 8px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; margin: 10px; }
+        button { padding: 12px 25px; font-size: 1rem; cursor: pointer; border: none; border-radius: 5px; background: #00ff88; color: #000; font-weight: bold; }
+        .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 20px; }
+        .log { background: #111; padding: 10px; border-radius: 5px; font-size: 0.8rem; height: 150px; overflow-y: auto; text-align: left; }
+        .hidden { display: none; }
+        .p1-color { color: #00d4ff; }
+        .p2-color { color: #ff8800; }
+    </style>
+</head>
+<body>
+
+    <div id="setup" class="setup-container">
+        <h2 id="setup-title">Player 1: Set your Secret Code</h2>
+        <input type="password" id="secretInput" maxlength="4" placeholder="****">
+        <br>
+        <button onclick="handleSetup()">Confirm Code</button>
+    </div>
+
+    <div id="game" class="game-container hidden">
+        <div id="turnBanner" class="turn-banner">Player 1's Turn</div>
+        <p>Enter your 4-digit guess:</p>
+        <input type="text" id="guessInput" maxlength="4" placeholder="0000">
+        <br>
+        <button onclick="processTurn()">Submit Guess</button>
+
+        <div class="history-grid">
+            <div>
+                <small class="p1-color">P1's Guesses</small>
+                <div id="p1Log" class="log"></div>
+            </div>
+            <div>
+                <small class="p2-color">P2's Guesses</small>
+                <div id="p2Log" class="log"></div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let codes = { p1: "", p2: "" };
+    let currentPlayer = 1;
+    let setupPhase = 1;
+
+    function handleSetup() {
+        const val = document.getElementById('secretInput').value;
+        if(val.length !== 4) return alert("Must be 4 digits");
+
+        if(setupPhase === 1) {
+            codes.p1 = val;
+            setupPhase = 2;
+            document.getElementById('secretInput').value = "";
+            document.getElementById('setup-title').innerText = "Player 2: Set your Secret Code";
+        } else {
+            codes.p2 = val;
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game').classList.remove('hidden');
+        }
+    }
+
+    function processTurn() {
+        const guess = document.getElementById('guessInput').value;
+        if(guess.length !== 4) return;
+
+        // Player 1 tries to guess Player 2's code and vice versa
+        const targetCode = (currentPlayer === 1) ? codes.p2 : codes.p1;
+        let correct = 0;
+
+        for(let i=0; i<4; i++) {
+            if(guess[i] === targetCode[i]) correct++;
+        }
+
+        const logId = (currentPlayer === 1) ? 'p1Log' : 'p2Log';
+        const logEntry = document.createElement('div');
+        logEntry.innerHTML = `<b>${guess}</b>: ${correct} Correct`;
+        document.getElementById(logId).prepend(logEntry);
+
+        if(correct === 4) {
+            alert(`VICTORY! Player ${currentPlayer} cracked the code!`);
+            location.reload();
+            return;
+        }
+
+        // Switch Turns
+        currentPlayer = (currentPlayer === 1) ? 2 : 1;
+        document.getElementById('turnBanner').innerText = `Player ${currentPlayer}'s Turn`;
+        document.getElementById('turnBanner').style.color = (currentPlayer === 1) ? '#00d4ff' : '#ff8800';
+        document.getElementById('guessInput').value = "";
+    }
+</script>
+</body>
+</html>

@@ -3,53 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crack The Code: Online Duel</title>
+    <title>Detective Conan: Code Breaker</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .card { background: #1e1e1e; padding: 25px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); width: 95%; max-width: 450px; text-align: center; }
-        .turn-banner { font-size: 1.4rem; padding: 10px; margin-bottom: 20px; border-radius: 8px; background: #333; font-weight: bold; }
-        input { width: 140px; padding: 10px; font-size: 1.5rem; text-align: center; letter-spacing: 5px; border-radius: 5px; border: 1px solid #444; background: #000; color: #fff; margin: 10px; }
-        button { padding: 12px 25px; border: none; border-radius: 5px; background: #00ff88; color: #000; font-weight: bold; cursor: pointer; margin: 5px; }
-        button:disabled { background: #444; cursor: not-allowed; opacity: 0.5; }
-        .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .log { background: #111; padding: 10px; border-radius: 5px; height: 180px; overflow-y: auto; font-size: 0.85rem; text-align: left; border: 1px solid #333; }
+        :root {
+            --conan-blue: #002b5e;
+            --conan-red: #e60012;
+            --conan-gold: #f9d71c;
+            --paper-bg: #f4e4bc;
+        }
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            background: #0a0a0a; 
+            background-image: radial-gradient(circle, #1a1a1a 10%, transparent 10%), radial-gradient(circle, #1a1a1a 10%, transparent 10%);
+            background-size: 20px 20px;
+            color: #fff; 
+            display: flex; flex-direction: column; align-items: center; padding: 20px; 
+        }
+        .card { 
+            background: var(--conan-blue); 
+            padding: 30px; 
+            border: 4px solid white;
+            border-radius: 5px; 
+            box-shadow: 0 0 0 4px var(--conan-blue), 0 20px 50px rgba(0,0,0,0.7); 
+            width: 95%; max-width: 480px; text-align: center;
+            position: relative;
+        }
+        /* Detective Ribbon Decoration */
+        .card::before {
+            content: "TOP SECRET";
+            position: absolute; top: 10px; right: -20px;
+            background: var(--conan-red); color: white;
+            padding: 5px 20px; transform: rotate(15deg);
+            font-weight: bold; font-size: 0.8rem; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+        }
+        h1 { color: var(--conan-gold); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
+        .turn-banner { 
+            font-size: 1.2rem; padding: 15px; margin-bottom: 20px; 
+            border: 2px dashed var(--conan-gold); background: rgba(0,0,0,0.3);
+            font-weight: bold; color: var(--conan-gold);
+        }
+        input { 
+            width: 160px; padding: 12px; font-size: 1.8rem; text-align: center; 
+            letter-spacing: 8px; border: 3px solid var(--conan-gold); 
+            background: #000; color: #fff; margin: 10px; 
+        }
+        button { 
+            padding: 12px 25px; border: none; background: var(--conan-red); 
+            color: white; font-weight: bold; cursor: pointer; text-transform: uppercase;
+            box-shadow: 3px 3px 0px #800000; transition: 0.1s;
+        }
+        button:active { transform: translate(2px, 2px); box-shadow: none; }
+        button:disabled { background: #444; box-shadow: none; color: #888; }
+        
+        .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .log { 
+            background: var(--paper-bg); color: #222; padding: 10px; 
+            border-radius: 2px; height: 200px; overflow-y: auto; 
+            font-size: 0.85rem; text-align: left; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            background-image: repeating-linear-gradient(transparent, transparent 19px, #d1c19d 20px);
+            line-height: 20px;
+        }
         .hidden { display: none; }
-        .p1-text { color: #00d4ff; font-weight: bold; }
-        .p2-text { color: #ff8800; font-weight: bold; }
-        #resetBtn { background: #ff4444; color: white; margin-top: 20px; width: 100%; }
+        .p1-label { color: #00d4ff; font-weight: bold; background: #000; padding: 2px 5px; }
+        .p2-label { color: #ff8800; font-weight: bold; background: #000; padding: 2px 5px; }
+        
+        .winner-overlay { color: var(--conan-gold); font-size: 1.5rem; margin: 10px 0; font-weight: bold; text-shadow: 2px 2px #000; }
+        #resetBtn { background: #333; margin-top: 20px; width: 100%; border: 2px solid white; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1 style="color:#00ff88">Crack The Code</h1>
+    <h1>Detective Agency</h1>
     
     <div id="player-select">
-        <p>Choose your side:</p>
-        <button onclick="choosePlayer(1)">Player 1</button>
-        <button onclick="choosePlayer(2)" style="background:#00d4ff">Player 2</button>
-        <p style="font-size: 0.8rem; color: #888; margin-top: 15px;">Refreshing the page will reset the game for everyone.</p>
+        <p>Identify yourself, Detective:</p>
+        <button id="p1SelectBtn" onclick="choosePlayer(1)">Detective 1</button>
+        <button id="p2SelectBtn" onclick="choosePlayer(2)" style="background:#00d4ff; color: #000;">Detective 2</button>
     </div>
 
     <div id="setup" class="hidden">
-        <h3 id="setup-title">Set your Secret Code</h3>
+        <h3 id="setup-title" style="color: var(--conan-gold);">Establish the Mystery</h3>
+        <p style="font-size: 0.8rem;">Set your 4-digit hidden code:</p>
         <input type="password" id="secretInput" maxlength="4" placeholder="****" inputmode="numeric">
         <br>
-        <button onclick="lockCode()">Confirm Secret</button>
+        <button onclick="lockCode()">Lock Evidence</button>
     </div>
 
     <div id="game" class="hidden">
-        <div id="turnBanner" class="turn-banner">Waiting for Opponent...</div>
+        <div id="turnBanner" class="turn-banner">🔍 Analyzing...</div>
         <input type="text" id="guessInput" maxlength="4" placeholder="0000" inputmode="numeric">
         <br>
-        <button id="submitBtn" onclick="submitGuess()">Submit Guess</button>
+        <button id="submitBtn" onclick="submitGuess()">Deduce!</button>
         
         <div class="history-container">
-            <div><small class="p1-text">P1 Guesses</small><div id="p1Log" class="log"></div></div>
-            <div><small class="p2-text">P2 Guesses</small><div id="p2Log" class="log"></div></div>
+            <div><span class="p1-label">D1 Notes</span><div id="p1Log" class="log"></div></div>
+            <div><span class="p2-label">D2 Notes</span><div id="p2Log" class="log"></div></div>
         </div>
 
-        <button id="resetBtn" class="hidden" onclick="resetGame()">RESTART GAME</button>
+        <div id="revealArea" style="margin-top: 15px; color: var(--conan-gold); font-weight: bold;"></div>
+        <button id="resetBtn" class="hidden" onclick="resetGame()">Case Closed - Next Round</button>
     </div>
 </div>
 
@@ -57,7 +111,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Your Firebase configuration
     const firebaseConfig = {
         apiKey: "AIzaSyBM3nlqtQ-vyiUDvZ0_D-eBSs6NMoGxqmQ",
         authDomain: "crackthecode-6c93a.firebaseapp.com",
@@ -75,64 +128,53 @@
     let myRole = null;
     let gameState = {};
 
-    // --- REFRESH LOGIC ---
-    // When the page is loaded/refreshed, we clear the current session.
-    remove(gameRef);
-
-    window.choosePlayer = (num) => {
-        myRole = num;
-        document.getElementById('player-select').classList.add('hidden');
-        document.getElementById('setup').classList.remove('hidden');
-        document.getElementById('setup-title').innerText = `Player ${myRole}: Set Secret Code`;
-    };
-
-    window.lockCode = () => {
-        const val = document.getElementById('secretInput').value;
-        if(val.length !== 4) return alert("Enter exactly 4 digits");
-        
-        const updates = {};
-        updates[`p${myRole}Code`] = val;
-        updates[`p${myRole}Ready`] = true;
-        // Reset turn to Player 1 whenever codes are set
-        updates['turn'] = 1; 
-        
-        update(gameRef, updates);
-        document.getElementById('setup').innerHTML = "<h3>Code Locked!</h3><p>Waiting for the other player...</p>";
-    };
-
     onValue(gameRef, (snapshot) => {
         const data = snapshot.val();
-        
-        // If data is deleted (by a refresh or reset button), go back to start
-        if (!data) {
-            if (myRole !== null) {
-                window.location.reload(); 
-            }
+        gameState = data || {};
+
+        if (myRole === null) {
+            document.getElementById('p1SelectBtn').disabled = !!(data && data.p1Taken);
+            document.getElementById('p2SelectBtn').disabled = !!(data && data.p2Taken);
+        }
+
+        if (!data && myRole !== null) {
+            window.location.reload();
             return;
         }
 
-        gameState = data;
-
-        // Start game only when both codes are in
-        if (data.p1Ready && data.p2Ready) {
+        if (data && data.p1Ready && data.p2Ready) {
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
             updateUI(data);
         }
     });
 
+    window.choosePlayer = (num) => {
+        myRole = num;
+        update(gameRef, { [`p${num}Taken`]: true });
+        document.getElementById('player-select').classList.add('hidden');
+        document.getElementById('setup').classList.remove('hidden');
+    };
+
+    window.lockCode = () => {
+        const val = document.getElementById('secretInput').value;
+        if(val.length !== 4) return alert("Enter 4 digits");
+        update(gameRef, { [`p${myRole}Code`]: val, [`p${myRole}Ready`]: true, turn: 1 });
+        document.getElementById('setup').innerHTML = `<h3 style="color:var(--conan-gold)">Evidence Locked!</h3><p>Wait for the other detective...</p>`;
+    };
+
     function updateUI(data) {
         const turn = data.turn || 1;
         const banner = document.getElementById('turnBanner');
         
         if (data.winner) {
-            banner.innerText = (data.winner === myRole) ? "🏆 YOU WON!" : "💀 DEFEAT!";
-            banner.style.color = (data.winner === myRole) ? "#00ff88" : "#ff4444";
+            banner.innerText = (data.winner === myRole) ? "🏆 CASE SOLVED!" : "💀 OUTSMARTED!";
+            banner.style.background = (data.winner === myRole) ? "#006400" : "#640000";
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('resetBtn').classList.remove('hidden');
+            document.getElementById('revealArea').innerHTML = `Target Code: ${myRole === 1 ? data.p2Code : data.p1Code}`;
         } else {
-            banner.innerText = (turn === myRole) ? "YOUR TURN" : "OPPONENT'S TURN";
-            banner.style.color = (turn === myRole) ? "#00ff88" : "#888";
+            banner.innerText = (turn === myRole) ? "🔍 YOUR DEDUCTION" : "⌛ OPPONENT THINKING...";
             document.getElementById('submitBtn').disabled = (turn !== myRole);
         }
 
@@ -144,9 +186,8 @@
         const el = document.getElementById(id);
         el.innerHTML = "";
         if(!guesses) return;
-        // Show newest guesses at the top
         Object.values(guesses).reverse().forEach(g => {
-            el.innerHTML += `<div style="border-bottom:1px solid #333; padding:5px 0;"><b>${g.val}</b> → ${g.score} Correct</div>`;
+            el.innerHTML += `<div style="margin-bottom:5px;">• <b>${g.val}</b>: ${g.score} Match</div>`;
         });
     }
 
@@ -156,20 +197,13 @@
 
         const opponentCode = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
         let score = 0;
-        
-        // YOUR STRICT LOGIC: Exact spot only
-        for(let i=0; i<4; i++) {
-            if(guess[i] === opponentCode[i]) score++;
-        }
+        for(let i=0; i<4; i++) if(guess[i] === opponentCode[i]) score++;
 
-        const nextTurn = (myRole === 1) ? 2 : 1;
-        const updates = { turn: nextTurn };
+        const updates = { turn: (myRole === 1 ? 2 : 1) };
         if (score === 4) updates.winner = myRole;
 
         update(gameRef, updates);
-        // Save guess with a timestamp to keep them unique
         set(ref(db, `game_sessions/demo/p${myRole}Guesses/${Date.now()}`), { val: guess, score: score });
-        
         document.getElementById('guessInput').value = "";
     };
 

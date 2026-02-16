@@ -28,13 +28,13 @@
             width: 95%; max-width: 480px; text-align: center;
             position: relative;
         }
-        /* Detective Ribbon Decoration */
         .card::before {
             content: "TOP SECRET";
             position: absolute; top: 10px; right: -20px;
             background: var(--conan-red); color: white;
             padding: 5px 20px; transform: rotate(15deg);
             font-weight: bold; font-size: 0.8rem; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+            z-index: 10;
         }
         h1 { color: var(--conan-gold); text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
         .turn-banner { 
@@ -53,7 +53,7 @@
             box-shadow: 3px 3px 0px #800000; transition: 0.1s;
         }
         button:active { transform: translate(2px, 2px); box-shadow: none; }
-        button:disabled { background: #444; box-shadow: none; color: #888; }
+        button:disabled { background: #444 !important; box-shadow: none !important; color: #888 !important; cursor: not-allowed; }
         
         .history-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
         .log { 
@@ -68,7 +68,6 @@
         .p1-label { color: #00d4ff; font-weight: bold; background: #000; padding: 2px 5px; }
         .p2-label { color: #ff8800; font-weight: bold; background: #000; padding: 2px 5px; }
         
-        .winner-overlay { color: var(--conan-gold); font-size: 1.5rem; margin: 10px 0; font-weight: bold; text-shadow: 2px 2px #000; }
         #resetBtn { background: #333; margin-top: 20px; width: 100%; border: 2px solid white; }
     </style>
 </head>
@@ -79,8 +78,9 @@
     
     <div id="player-select">
         <p>Identify yourself, Detective:</p>
-        <button id="p1SelectBtn" onclick="choosePlayer(1)">Detective 1</button>
-        <button id="p2SelectBtn" onclick="choosePlayer(2)" style="background:#00d4ff; color: #000;">Detective 2</button>
+        <button id="p1SelectBtn" onclick="tryChoosePlayer(1)">Detective 1</button>
+        <button id="p2SelectBtn" onclick="tryChoosePlayer(2)" style="background:#00d4ff; color: #000;">Detective 2</button>
+        <p style="font-size: 0.7rem; color: #888; margin-top: 15px;">Warning: One detective per role.</p>
     </div>
 
     <div id="setup" class="hidden">
@@ -109,7 +109,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, update, remove, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBM3nlqtQ-vyiUDvZ0_D-eBSs6NMoGxqmQ",
@@ -128,20 +128,29 @@
     let myRole = null;
     let gameState = {};
 
+    // Listen for data changes
     onValue(gameRef, (snapshot) => {
         const data = snapshot.val();
         gameState = data || {};
 
-        if (myRole === null) {
-            document.getElementById('p1SelectBtn').disabled = !!(data && data.p1Taken);
-            document.getElementById('p2SelectBtn').disabled = !!(data && data.p2Taken);
+        // 1. Sync Role Selection Buttons
+        const p1Btn = document.getElementById('p1SelectBtn');
+        const p2Btn = document.getElementById('p2SelectBtn');
+        
+        if (data) {
+            if (data.p1Taken) { p1Btn.disabled = true; p1Btn.innerText = "D1 (OCCUPIED)"; }
+            else { p1Btn.disabled = false; p1Btn.innerText = "Detective 1"; }
+            
+            if (data.p2Taken) { p2Btn.disabled = true; p2Btn.innerText = "D2 (OCCUPIED)"; }
+            else { p2Btn.disabled = false; p2Btn.innerText = "Detective 2"; }
+        } else {
+            // No data means the game was reset
+            if (myRole !== null) window.location.reload();
+            p1Btn.disabled = false; p2Btn.disabled = false;
+            p1Btn.innerText = "Detective 1"; p2Btn.innerText = "Detective 2";
         }
 
-        if (!data && myRole !== null) {
-            window.location.reload();
-            return;
-        }
-
+        // 2. Transition to Game
         if (data && data.p1Ready && data.p2Ready) {
             document.getElementById('setup').classList.add('hidden');
             document.getElementById('game').classList.remove('hidden');
@@ -149,9 +158,18 @@
         }
     });
 
-    window.choosePlayer = (num) => {
+    window.tryChoosePlayer = async (num) => {
+        // Double check with server before allowing selection
+        const snapshot = await get(gameRef);
+        const data = snapshot.val() || {};
+        
+        if (data[`p${num}Taken`]) {
+            alert("This role was just taken by the other detective!");
+            return;
+        }
+
         myRole = num;
-        update(gameRef, { [`p${num}Taken`]: true });
+        await update(gameRef, { [`p${num}Taken`]: true });
         document.getElementById('player-select').classList.add('hidden');
         document.getElementById('setup').classList.remove('hidden');
     };
@@ -193,7 +211,7 @@
 
     window.submitGuess = () => {
         const guess = document.getElementById('guessInput').value;
-        if(guess.length !== 4) return;
+        if(guess.length !== 4 || isNaN(guess)) return;
 
         const opponentCode = (myRole === 1) ? gameState.p2Code : gameState.p1Code;
         let score = 0;
@@ -207,8 +225,9 @@
         document.getElementById('guessInput').value = "";
     };
 
-    window.resetGame = () => {
-        remove(gameRef);
+    window.resetGame = async () => {
+        await remove(gameRef);
+        window.location.reload();
     };
 </script>
 </body>
